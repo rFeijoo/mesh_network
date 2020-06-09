@@ -24,6 +24,8 @@
     mesh.onNewConnection(&network_new_connection_callback);
 
     mesh.onDroppedConnection(&network_dropped_connection_callback);
+
+    network_new_message = false;
   }
 
 /*  void network_received_callback(uint32_t ID, String &msg);
@@ -41,7 +43,7 @@
     if (error)
       return;
       
-    JsonObject root = jsonBuffer.as<JsonObject>();
+    root = jsonBuffer.as<JsonObject>();
 
     if (root.containsKey("subject"))
     {
@@ -58,8 +60,10 @@
         date_time_sync(root);
 
         // Envia uma confirmação para o master
-        network_answer_server(ID);
+        answer_server(ID);
       }
+      else
+        network_new_message = true;
     }
   }
 
@@ -85,12 +89,20 @@
   void network_handler(void)
   {
     mesh.update();
+
+    // Habilita flags dos periféricos para nova mensagem recebida
+    if (network_new_message)
+    {
+      IR_new_message = true;
+
+      network_new_message = false;
+    }
   }
 
-/*  void network_answer_server(uint32_t ID);
+/*  void network_received_callback(uint32_t from, String &msg);
     Envia uma mensagem de confirmação para o módulo master.
 */
-  void network_answer_server(uint32_t ID)
+  void answer_server(uint32_t ID)
   {
     DynamicJsonDocument jsonBuffer(128);
     
